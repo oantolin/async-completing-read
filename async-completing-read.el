@@ -87,10 +87,11 @@ If the metadata has no async property, just call
   (if-let ((metadata (completion-metadata "" collection predicate))
            (async (completion-metadata-get metadata 'async))
            (output-buffer (generate-new-buffer "*async-completing-read*"))
-           (update-timer (run-with-timer
-                          acr-refresh-completion-delay
-                          acr-refresh-completion-delay
-                          acr-refresh-completion-ui)))
+           (update-timer (when acr-refresh-completion-ui
+                           (run-with-timer
+                            acr-refresh-completion-delay
+                            acr-refresh-completion-delay
+                            acr-refresh-completion-ui))))
       (unwind-protect
           (progn
             (apply
@@ -103,7 +104,7 @@ If the metadata has no async property, just call
                 ((functionp predicate) (funcall predicate candidate))
                 (t t)))
              args))
-        (cancel-timer update-timer)
+        (when update-timer (cancel-timer update-timer))
         (kill-buffer output-buffer))
     (apply acr-completing-read-function prompt collection predicate args)))
 
