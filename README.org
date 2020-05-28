@@ -23,3 +23,7 @@ rooted at the current directory with the expression:
 #+begin_src emacs-lisp
 (completing-read "File: " (acr-lines-from-process "find" "."))
 #+end_src
+
+Note that =async-completing-read= can handle normal non-async completion
+tables too, so you can just "leave it on", that is use it as the value of
+=completing-read-function= all the time.
