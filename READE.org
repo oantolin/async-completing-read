@@ -1,0 +1,25 @@
+This package provides an =async-completing-read= function that
+recognizes completion table with an =async= property in their metadata
+and treats the specially. The value associated to the =async= property
+should be a list of an executable program and arguments for it. This
+program is started asynchronously and its output collected in a
+buffer. The completion table can access the output buffer by calling
+its predicate on the symbol =output-buffer=.
+
+A useful example of a class of async completion tables is provided:
+=(acr-lines-from-process prog args)= returns a completion table for
+which the completion candidates are lines the standard output of prog
+run with arguments args.
+
+As an example, once you have evaluated:
+
+#+begin_src emacs-lisp
+(setq completing-read-function #'async-completing-read)
+#+end_src
+
+you can prompt from any file found in the part of the directory tree
+rooted at the current directory with the expression:
+
+#+begin_src emacs-lisp
+(completing-read "File: " (acr-lines-from-process "ls" "-R"))
+#+end_src
