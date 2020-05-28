@@ -1,3 +1,5 @@
+* Overview
+
 This package provides an =async-completing-read= function that
 recognizes completion table with an =async= property in their metadata
 and treats the specially. The value associated to the =async= property
@@ -27,3 +29,23 @@ rooted at the current directory with the expression:
 Note that =async-completing-read= can handle normal non-async completion
 tables too, so you can just "leave it on", that is use it as the value of
 =completing-read-function= all the time.
+
+* Configuration
+
+- =acr-completing-read-function= ::
+  =async-completing-read= really just handles logistics of starting the
+  process and passing the output buffer to the completion table, it
+  delegates all actual prompting the user and reading input to
+  =acr-completing-read-function=, which defaults to whatever
+  =completing-read-function= was at the time this library was loaded.
+
+- =acr-refresh-completion-ui= :: 
+  set this to a function that refshes the display of your completion
+  UI. The default value, =acr-refresh-icomplete=, obviously is meant for
+  Icomplete. Note this variable is just about /showing/ the completions:
+  the completions do get updated asynchronously anyway, and as soon as
+  you typed anything you'd pick the newly available ones up.
+
+- =acr-refresh-completion-delay= ::
+  how often to call =acr-refresh-completion-ui=, defaults to 0.3
+  seconds.
