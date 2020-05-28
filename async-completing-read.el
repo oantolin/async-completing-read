@@ -127,6 +127,8 @@ If the metadata has no async property, just call
                            "\n")))))
           (complete-with-action action lines string pred)))))
 
+(declare-function icomplete-exhibit "icomplete")
+
 (defun acr-refresh-icomplete ()
   "Refresh icomplete completions."
   (when-let ((mini (active-minibuffer-window)))
