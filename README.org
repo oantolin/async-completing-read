@@ -21,5 +21,5 @@ you can prompt from any file found in the part of the directory tree
 rooted at the current directory with the expression:
 
 #+begin_src emacs-lisp
-(completing-read "File: " (acr-lines-from-process "ls" "-R"))
+(completing-read "File: " (acr-lines-from-process "find" "."))
 #+end_src
