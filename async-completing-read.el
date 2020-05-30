@@ -124,7 +124,7 @@ If the metadata has no async property, just call
                              (prog1
                                  (buffer-substring last-pt new-pt)
                                (setq last-pt new-pt)))
-                           "\n")))))
+                           "\n" 'omit-nulls)))))
           (complete-with-action action lines string pred)))))
 
 (declare-function icomplete-exhibit "icomplete")
