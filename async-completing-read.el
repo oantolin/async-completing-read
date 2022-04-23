@@ -94,8 +94,16 @@ If the metadata has no async property, just call
                             acr-refresh-completion-ui))))
       (unwind-protect
           (progn
-            (apply
-             #'start-process "*async-completing-read*" output-buffer async)
+            (make-process
+             :name "*async-completing-read*"
+             :buffer output-buffer
+             :command async
+             :sentinel (lambda (process event)
+                         (when acr-refresh-completion-ui
+                           (funcall acr-refresh-completion-ui))
+                         (when update-timer
+                           (cancel-timer update-timer))
+                         (kill-buffer output-buffer)))
             (apply
              acr-completing-read-function prompt collection
              (lambda (candidate)
@@ -115,17 +123,19 @@ If the metadata has no async property, just call
       (if (eq action 'metadata)
           `(metadata (async ,program ,@args)
                      (category lines-from-process))
-        (with-current-buffer (funcall pred 'output-buffer)
-          (when (> (point-max) last-pt)
-            (setq lines
-                  (append lines
-                          (split-string
-                           (let ((new-pt (point-max)))
-                             (prog1
-                                 (buffer-substring last-pt new-pt)
-                               (setq last-pt new-pt)))
-                           "\n" 'omit-nulls)))))
-          (complete-with-action action lines string pred)))))
+        (when-let (output-buffer (funcall pred 'output-buffer))
+          (when (buffer-live-p output-buffer)
+            (with-current-buffer output-buffer
+              (when (> (point-max) last-pt)
+                (setq lines
+                      (append lines
+                              (split-string
+                               (let ((new-pt (point-max)))
+                                 (prog1
+                                     (buffer-substring last-pt new-pt)
+                                   (setq last-pt new-pt)))
+                               "\n" 'omit-nulls)))))))
+        (complete-with-action action lines string pred)))))
 
 (declare-function icomplete-exhibit "icomplete")
 
