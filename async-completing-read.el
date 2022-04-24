@@ -116,8 +116,11 @@ If the metadata has no async property, just call
         (kill-buffer output-buffer))
     (apply acr-completing-read-function prompt collection predicate args)))
 
-(defun acr-lines-from-process (program &rest args)
-  "Return a completion table for output lines from PROGRAM run with ARGS."
+(defun acr-preprocess-lines-from-process (preprocess-fun
+                                          program &rest args)
+  "Return a completion table for output lines from PROGRAM run with ARGS.
+PREPROCESS-FUN is a function that is passed the list of
+candidates for pre-processing before it is accepted."
   (let ((last-pt 1) lines)
     (lambda (string pred action)
       (if (eq action 'metadata)
@@ -129,13 +132,21 @@ If the metadata has no async property, just call
               (when (> (point-max) last-pt)
                 (setq lines
                       (append lines
-                              (split-string
-                               (let ((new-pt (point-max)))
-                                 (prog1
-                                     (buffer-substring last-pt new-pt)
-                                   (setq last-pt new-pt)))
-                               "\n" 'omit-nulls)))))))
+                              (funcall
+                               preprocess-fun
+                               (split-string
+                                (let ((new-pt (point-max)))
+                                  (prog1
+                                      (buffer-substring last-pt
+                                                        new-pt)
+                                    (setq last-pt new-pt)))
+                                "\n" 'omit-nulls))))))))
         (complete-with-action action lines string pred)))))
+
+(defun acr-lines-from-process (program &rest args)
+  "Return a completion table for output lines from PROGRAM run with ARGS."
+  (apply 'acr-preprocess-lines-from-process
+         'identity program args))
 
 (declare-function icomplete-exhibit "icomplete")
 
