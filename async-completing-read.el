@@ -116,7 +116,8 @@ If the metadata has no async property, just call
         (kill-buffer output-buffer))
     (apply acr-completing-read-function prompt collection predicate args)))
 
-(defun acr-preprocess-lines-from-process (preprocess-fun
+(defun acr-preprocess-lines-from-process (category
+                                          preprocess-fun
                                           program &rest args)
   "Return a completion table for output lines from PROGRAM run with ARGS.
 PREPROCESS-FUN is a function that is passed the list of
@@ -125,7 +126,7 @@ candidates for pre-processing before it is accepted."
     (lambda (string pred action)
       (if (eq action 'metadata)
           `(metadata (async ,program ,@args)
-                     (category lines-from-process))
+                     (category . ,category))
         (when-let (output-buffer (funcall pred 'output-buffer))
           (when (buffer-live-p output-buffer)
             (with-current-buffer output-buffer
@@ -146,6 +147,7 @@ candidates for pre-processing before it is accepted."
 (defun acr-lines-from-process (program &rest args)
   "Return a completion table for output lines from PROGRAM run with ARGS."
   (apply 'acr-preprocess-lines-from-process
+         'lines-from-process
          'identity program args))
 
 (declare-function icomplete-exhibit "icomplete")
