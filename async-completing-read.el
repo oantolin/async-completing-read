@@ -86,7 +86,7 @@ If the metadata has no async property, just call
 `acr-completing-read-function' directly on COLLECTION."
   (if-let ((metadata (completion-metadata "" collection predicate))
            (async (completion-metadata-get metadata 'async))
-           (output-buffer (generate-new-buffer "*async-completing-read*"))
+           (output-buffer (generate-new-buffer " *async-completing-read*"))
            (update-timer (when acr-refresh-completion-ui
                            (run-with-timer
                             acr-refresh-completion-delay
