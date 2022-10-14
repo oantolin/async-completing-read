@@ -86,7 +86,7 @@ If the metadata has no async property, just call
 `acr-completing-read-function' directly on COLLECTION."
   (if-let ((metadata (completion-metadata "" collection predicate))
            (async (completion-metadata-get metadata 'async))
-           (output-buffer (generate-new-buffer "*async-completing-read*"))
+           (output-buffer (generate-new-buffer " *async-completing-read*"))
            (update-timer (when acr-refresh-completion-ui
                            (run-with-timer
                             acr-refresh-completion-delay
@@ -94,8 +94,16 @@ If the metadata has no async property, just call
                             acr-refresh-completion-ui))))
       (unwind-protect
           (progn
-            (apply
-             #'start-process "*async-completing-read*" output-buffer async)
+            (make-process
+             :name "*async-completing-read*"
+             :buffer output-buffer
+             :command async
+             :sentinel (lambda (process event)
+                         (when acr-refresh-completion-ui
+                           (funcall acr-refresh-completion-ui))
+                         (when update-timer
+                           (cancel-timer update-timer))
+                         (kill-buffer output-buffer)))
             (apply
              acr-completing-read-function prompt collection
              (lambda (candidate)
@@ -108,24 +116,39 @@ If the metadata has no async property, just call
         (kill-buffer output-buffer))
     (apply acr-completing-read-function prompt collection predicate args)))
 
-(defun acr-lines-from-process (program &rest args)
-  "Return a completion table for output lines from PROGRAM run with ARGS."
+(defun acr-preprocess-lines-from-process (category
+                                          preprocess-fun
+                                          program &rest args)
+  "Return a completion table for output lines from PROGRAM run with ARGS.
+PREPROCESS-FUN is a function that is passed the list of
+candidates for pre-processing before it is accepted."
   (let ((last-pt 1) lines)
     (lambda (string pred action)
       (if (eq action 'metadata)
           `(metadata (async ,program ,@args)
-                     (category lines-from-process))
-        (with-current-buffer (funcall pred 'output-buffer)
-          (when (> (point-max) last-pt)
-            (setq lines
-                  (append lines
-                          (split-string
-                           (let ((new-pt (point-max)))
-                             (prog1
-                                 (buffer-substring last-pt new-pt)
-                               (setq last-pt new-pt)))
-                           "\n" 'omit-nulls)))))
-          (complete-with-action action lines string pred)))))
+                     (category . ,category))
+        (when-let (output-buffer (funcall pred 'output-buffer))
+          (when (buffer-live-p output-buffer)
+            (with-current-buffer output-buffer
+              (when (> (point-max) last-pt)
+                (setq lines
+                      (append lines
+                              (funcall
+                               preprocess-fun
+                               (split-string
+                                (let ((new-pt (point-max)))
+                                  (prog1
+                                      (buffer-substring last-pt
+                                                        new-pt)
+                                    (setq last-pt new-pt)))
+                                "\n" 'omit-nulls))))))))
+        (complete-with-action action lines string pred)))))
+
+(defun acr-lines-from-process (program &rest args)
+  "Return a completion table for output lines from PROGRAM run with ARGS."
+  (apply 'acr-preprocess-lines-from-process
+         'lines-from-process
+         'identity program args))
 
 (declare-function icomplete-exhibit "icomplete")
 
